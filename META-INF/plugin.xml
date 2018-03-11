@@ -1,0 +1,336 @@
+<idea-plugin url="https://github.com/ericmorand/idea-twigextended-plugin">
+    <id>com.nightlycommit.idea.twigextendedplugin</id>
+    <name>Twig Extended</name>
+    <version>0.1.0</version>
+    <vendor email="eric.morand@gmail.com" url="https://github.com/ericmorand">Eric MORAND</vendor>
+
+    <description><![CDATA[
+<h1>Twig Extended Plugin</h1>
+
+<h2>Features:</h2>
+
+<ul>
+    <li>Namespaces support</li>
+    <li>Block, Filter, Function and Macro completion</li>
+</ul>
+      ]]></description>
+
+    <change-notes>
+        <![CDATA[]]>
+    </change-notes>
+
+    <!-- please see http://confluence.jetbrains.net/display/IDEADEV/Build+Number+Ranges for description -->
+    <idea-version since-build="172.4155"/>
+
+    <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+     on how to target different products -->
+    <depends>com.intellij.modules.lang</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+
+        <projectService serviceImplementation="com.nightlycommit.idea.twigextendedplugin.Settings"/>
+
+        <projectConfigurable instance="com.nightlycommit.idea.twigextendedplugin.SettingsForm"
+                             displayName="Twig"
+                             id="Symfony2.SettingsForm"
+                             groupId="language"
+                             nonDefaultProject="true"
+        />
+
+        <projectConfigurable instance="com.nightlycommit.idea.twigextendedplugin.ui.TwigSettingsForm"
+                             displayName="Namespaces"
+                             parentId="Symfony2.SettingsForm"
+                             nonDefaultProject="true"
+        />
+
+        <psi.referenceContributor
+                implementation="com.nightlycommit.idea.twigextendedplugin.config.SymfonyPhpReferenceContributor"/>
+        <psi.referenceContributor
+                implementation="com.nightlycommit.idea.twigextendedplugin.translation.TranslationReferenceContributor"/>
+        <psi.referenceContributor
+                implementation="com.nightlycommit.idea.twigextendedplugin.routing.PhpRouteReferenceContributor"/>
+        <psi.referenceContributor
+                implementation="com.nightlycommit.idea.twigextendedplugin.config.xml.XmlReferenceContributor"/>
+        <psi.referenceContributor
+                implementation="com.nightlycommit.idea.twigextendedplugin.config.php.PhpConfigReferenceContributor"/>
+        <psi.referenceContributor
+                implementation="com.nightlycommit.idea.twigextendedplugin.form.FormTypeReferenceContributor"/>
+        <psi.referenceContributor
+                implementation="com.nightlycommit.idea.twigextendedplugin.util.DocHashTagReferenceContributor"/>
+        <psi.referenceContributor
+                implementation="com.nightlycommit.idea.twigextendedplugin.util.MethodParameterReferenceContributor"/>
+        <psi.referenceContributor
+                implementation="com.nightlycommit.idea.twigextendedplugin.routing.RouteXmlReferenceContributor"/>
+
+        <gotoDeclarationHandler
+                implementation="com.nightlycommit.idea.twigextendedplugin.templating.TwigTemplateGoToDeclarationHandler"/>
+        <gotoDeclarationHandler
+                implementation="com.nightlycommit.idea.twigextendedplugin.config.yaml.YamlGoToDeclarationHandler"/>
+        <gotoDeclarationHandler implementation="com.nightlycommit.idea.twigextendedplugin.asset.AssetGoToDeclarationHandler"/>
+        <gotoDeclarationHandler
+                implementation="com.nightlycommit.idea.twigextendedplugin.templating.PhpTemplateGlobalStringGoToDeclarationHandler"/>
+        <gotoDeclarationHandler
+                implementation="com.nightlycommit.idea.twigextendedplugin.config.PhpClassServiceGotoDeclarationHandler"/>
+        <gotoDeclarationHandler
+                implementation="com.nightlycommit.idea.twigextendedplugin.doctrine.querybuilder.QueryBuilderGotoDeclarationHandler"/>
+
+        <completion.confidence language="PHP"
+                               implementationClass="com.nightlycommit.idea.twigextendedplugin.completion.PhpParameterStringCompletionConfidence"
+                               id="asTrue" order="first"/>
+
+        <lang.foldingBuilder language="PHP"
+                             implementationClass="com.nightlycommit.idea.twigextendedplugin.navigation.PhpFoldingBuilder"/>
+        <lang.foldingBuilder language="Twig"
+                             implementationClass="com.nightlycommit.idea.twigextendedplugin.navigation.TwigFoldingBuilder"/>
+
+        <completion.contributor language="any"
+                                implementationClass="com.nightlycommit.idea.twigextendedplugin.codeInsight.completion.CompletionContributor"/>
+        <gotoDeclarationHandler
+                implementation="com.nightlycommit.idea.twigextendedplugin.codeInsight.navigation.GotoHandler"/>
+
+        <completion.contributor language="PHP"
+                                implementationClass="com.nightlycommit.idea.twigextendedplugin.completion.ConstantEnumCompletionContributor"/>
+        <completion.contributor language="PHP"
+                                implementationClass="com.nightlycommit.idea.twigextendedplugin.doctrine.querybuilder.QueryBuilderCompletionContributor"/>
+
+        <completion.contributor language="XML"
+                                implementationClass="com.nightlycommit.idea.twigextendedplugin.config.xml.XmlCompletionContributor"/>
+        <completion.contributor language="Twig"
+                                implementationClass="com.nightlycommit.idea.twigextendedplugin.templating.TwigTemplateCompletionContributor"/>
+        <completion.contributor language="HTML"
+                                implementationClass="com.nightlycommit.idea.twigextendedplugin.templating.completion.TwigHtmlCompletionContributor"/>
+        <completion.contributor language="yaml"
+                                implementationClass="com.nightlycommit.idea.twigextendedplugin.config.yaml.YamlCompletionContributor"/>
+
+        <completion.contributor language="XML"
+                                implementationClass="com.nightlycommit.idea.twigextendedplugin.doctrine.metadata.DoctrineXmlCompletionContributor"/>
+        <completion.contributor language="PHP"
+                                implementationClass="com.nightlycommit.idea.twigextendedplugin.form.completion.FormCompletionContributor"/>
+        <completion.contributor language="PHP"
+                                implementationClass="com.nightlycommit.idea.twigextendedplugin.doctrine.completion.DoctrineCompletionContributor"/>
+
+        <fileBasedIndex implementation="com.nightlycommit.idea.twigextendedplugin.stubs.indexes.RoutesStubIndex"/>
+        <fileBasedIndex implementation="com.nightlycommit.idea.twigextendedplugin.stubs.indexes.TwigExtendsStubIndex"/>
+        <fileBasedIndex implementation="com.nightlycommit.idea.twigextendedplugin.stubs.indexes.ServicesDefinitionStubIndex"/>
+        <fileBasedIndex implementation="com.nightlycommit.idea.twigextendedplugin.stubs.indexes.ContainerParameterStubIndex"/>
+        <fileBasedIndex implementation="com.nightlycommit.idea.twigextendedplugin.stubs.indexes.TranslationStubIndex"/>
+        <fileBasedIndex implementation="com.nightlycommit.idea.twigextendedplugin.stubs.indexes.TwigIncludeStubIndex"/>
+        <fileBasedIndex implementation="com.nightlycommit.idea.twigextendedplugin.stubs.indexes.TwigMacroFunctionStubIndex"/>
+        <fileBasedIndex implementation="com.nightlycommit.idea.twigextendedplugin.stubs.indexes.ServicesTagStubIndex"/>
+        <fileBasedIndex
+                implementation="com.nightlycommit.idea.twigextendedplugin.stubs.indexes.PhpTwigTemplateUsageStubIndex"/>
+        <fileBasedIndex
+                implementation="com.nightlycommit.idea.twigextendedplugin.stubs.indexes.DoctrineMetadataFileStubIndex"/>
+        <fileBasedIndex implementation="com.nightlycommit.idea.twigextendedplugin.stubs.indexes.FileResourcesIndex"/>
+        <fileBasedIndex implementation="com.nightlycommit.idea.twigextendedplugin.stubs.indexes.ContainerBuilderStubIndex"/>
+        <fileBasedIndex implementation="com.nightlycommit.idea.twigextendedplugin.stubs.indexes.EventAnnotationStubIndex"/>
+        <fileBasedIndex implementation="com.nightlycommit.idea.twigextendedplugin.stubs.indexes.ContainerIdUsagesStubIndex"/>
+        <fileBasedIndex implementation="com.nightlycommit.idea.twigextendedplugin.stubs.indexes.TwigBlockIndexExtension"/>
+
+        <codeInsight.lineMarkerProvider language="PHP"
+                                        implementationClass="com.nightlycommit.idea.twigextendedplugin.config.ServiceLineMarkerProvider"/>
+        <codeInsight.lineMarkerProvider language="PHP"
+                                        implementationClass="com.nightlycommit.idea.twigextendedplugin.dic.ControllerMethodLineMarkerProvider"/>
+        <codeInsight.lineMarkerProvider language="Twig"
+                                        implementationClass="com.nightlycommit.idea.twigextendedplugin.templating.TwigLineMarkerProvider"/>
+        <codeInsight.lineMarkerProvider language="yaml"
+                                        implementationClass="com.nightlycommit.idea.twigextendedplugin.routing.YamlLineMarkerProvider"/>
+        <codeInsight.lineMarkerProvider language="XML"
+                                        implementationClass="com.nightlycommit.idea.twigextendedplugin.routing.XmlLineMarkerProvider"/>
+        <codeInsight.lineMarkerProvider language="XML"
+                                        implementationClass="com.nightlycommit.idea.twigextendedplugin.dic.linemarker.XmlLineMarkerProvider"/>
+        <codeInsight.lineMarkerProvider language="yaml"
+                                        implementationClass="com.nightlycommit.idea.twigextendedplugin.dic.linemarker.YamlLineMarkerProvider"/>
+        <codeInsight.lineMarkerProvider language="yaml"
+                                        implementationClass="com.nightlycommit.idea.twigextendedplugin.config.ConfigLineMarkerProvider"/>
+        <codeInsight.lineMarkerProvider language="XML"
+                                        implementationClass="com.nightlycommit.idea.twigextendedplugin.doctrine.metadata.DoctrineMetadataLineMarkerProvider"/>
+
+        <gotoSymbolContributor
+                implementation="com.nightlycommit.idea.twigextendedplugin.navigation.ServiceSymbolContributor"/>
+        <gotoSymbolContributor implementation="com.nightlycommit.idea.twigextendedplugin.navigation.RouteSymbolContributor"/>
+        <gotoSymbolContributor
+                implementation="com.nightlycommit.idea.twigextendedplugin.navigation.SymfonyCommandSymbolContributor"/>
+
+        <gotoFileContributor implementation="com.nightlycommit.idea.twigextendedplugin.navigation.TemplateFileContributor"/>
+
+        <gotoRelatedProvider implementation="com.nightlycommit.idea.twigextendedplugin.navigation.PhpGotoRelatedProvider"/>
+
+        <directoryProjectGenerator
+                implementation="com.nightlycommit.idea.twigextendedplugin.installer.SymfonyInstallerProjectGenerator"/>
+        <projectTemplatesFactory
+                implementation="com.nightlycommit.idea.twigextendedplugin.installer.SymfonyInstallerTemplatesFactory"/>
+
+        <codeInsight.parameterNameHints language="XML"
+                                        implementationClass="com.nightlycommit.idea.twigextendedplugin.dic.ServiceArgumentParameterHintsProvider"/>
+        <codeInsight.parameterNameHints language="yaml"
+                                        implementationClass="com.nightlycommit.idea.twigextendedplugin.dic.ServiceArgumentParameterHintsProvider"/>
+
+        <localInspection groupPath="Symfony" shortName="TwigTemplateMissingInspection"
+                         displayName="Twig: Missing Template"
+                         groupName="Template"
+                         enabledByDefault="true"
+                         level="WARNING"
+                         language="Twig"
+                         implementationClass="com.nightlycommit.idea.twigextendedplugin.templating.inspection.TwigTemplateMissingInspection"/>
+
+        <intentionAction>
+            <className>com.nightlycommit.idea.twigextendedplugin.intentions.yaml.YamlServiceTagIntention</className>
+            <category>yaml</category>
+            <descriptionDirectoryName>SymfonyYamlServiceTagIntention</descriptionDirectoryName>
+        </intentionAction>
+
+        <intentionAction>
+            <className>com.nightlycommit.idea.twigextendedplugin.intentions.php.PhpBundleCompilerPassIntention</className>
+            <category>PHP</category>
+            <descriptionDirectoryName>PhpBundleCompilerPassIntention</descriptionDirectoryName>
+        </intentionAction>
+
+        <intentionAction>
+            <className>com.nightlycommit.idea.twigextendedplugin.form.intention.FormStringToClassConstantIntention</className>
+            <category>PHP</category>
+            <descriptionDirectoryName>FormStringToClassConstantIntention</descriptionDirectoryName>
+        </intentionAction>
+
+        <intentionAction>
+            <className>com.nightlycommit.idea.twigextendedplugin.doctrine.intention.DoctrineRepositoryClassConstantIntention
+            </className>
+            <category>PHP</category>
+            <descriptionDirectoryName>DoctrineRepositoryClassConstantIntention</descriptionDirectoryName>
+        </intentionAction>
+
+        <intentionAction>
+            <className>com.nightlycommit.idea.twigextendedplugin.translation.intention.TwigTranslationKeyIntention</className>
+            <category>Twig</category>
+            <descriptionDirectoryName>TwigTranslationKeyIntention</descriptionDirectoryName>
+        </intentionAction>
+
+        <intentionAction>
+            <className>com.nightlycommit.idea.twigextendedplugin.dic.intention.PhpServiceArgumentIntention</className>
+            <category>PHP</category>
+            <descriptionDirectoryName>DoctrineRepositoryClassConstantIntention</descriptionDirectoryName>
+        </intentionAction>
+    </extensions>
+
+    <extensionPoints>
+        <extensionPoint name="extension.ServiceContainerLoader"
+                        interface="com.nightlycommit.idea.twigextendedplugin.extension.ServiceContainerLoader"/>
+        <extensionPoint name="extension.DoctrineModelProvider"
+                        interface="com.nightlycommit.idea.twigextendedplugin.extension.DoctrineModelProvider"/>
+        <extensionPoint name="extension.MethodSignatureTypeProviderExtension"
+                        interface="com.nightlycommit.idea.twigextendedplugin.extension.MethodSignatureTypeProviderExtension"/>
+        <extensionPoint name="extension.MethodParameterReferenceContributorExtension"
+                        interface="com.nightlycommit.idea.twigextendedplugin.extension.MethodParameterReferenceContributorExtension"/>
+        <extensionPoint name="extension.ControllerActionGotoRelatedCollector"
+                        interface="com.nightlycommit.idea.twigextendedplugin.extension.ControllerActionGotoRelatedCollector"/>
+        <extensionPoint name="extension.GotoCompletionRegistrar"
+                        interface="com.nightlycommit.idea.twigextendedplugin.codeInsight.GotoCompletionRegistrar"/>
+        <extensionPoint name="extension.TwigNamespaceExtension"
+                        interface="com.nightlycommit.idea.twigextendedplugin.extension.TwigNamespaceExtension"/>
+        <extensionPoint name="extension.RoutingLoader"
+                        interface="com.nightlycommit.idea.twigextendedplugin.extension.RoutingLoader"/>
+        <extensionPoint name="extension.CompiledServiceBuilderFactory"
+                        interface="com.nightlycommit.idea.twigextendedplugin.extension.CompiledServiceBuilderFactory"/>
+        <extensionPoint name="extension.ServiceCollector"
+                        interface="com.nightlycommit.idea.twigextendedplugin.extension.ServiceCollector"/>
+        <extensionPoint name="extension.ServiceDefinitionLocator"
+                        interface="com.nightlycommit.idea.twigextendedplugin.extension.ServiceDefinitionLocator"/>
+        <extensionPoint name="extension.TwigVariableCollector"
+                        interface="com.nightlycommit.idea.twigextendedplugin.templating.variable.TwigFileVariableCollector"/>
+    </extensionPoints>
+
+    <extensions defaultExtensionNs="com.nightlycommit.idea.twigextendedplugin.extension">
+        <ServiceContainerLoader implementation="com.nightlycommit.idea.twigextendedplugin.ServiceContainerSettingsLoader"/>
+
+        <ControllerActionGotoRelatedCollector
+                implementation="com.nightlycommit.idea.twigextendedplugin.navigation.controller.RouteControllerRelatedGotoCollector"/>
+        <ControllerActionGotoRelatedCollector
+                implementation="com.nightlycommit.idea.twigextendedplugin.navigation.controller.ModelsControllerRelatedGotoCollector"/>
+        <ControllerActionGotoRelatedCollector
+                implementation="com.nightlycommit.idea.twigextendedplugin.navigation.controller.TemplatesControllerRelatedGotoCollector"/>
+
+        <GotoCompletionRegistrar
+                implementation="com.nightlycommit.idea.twigextendedplugin.form.FormOptionGotoCompletionRegistrar"/>
+        <GotoCompletionRegistrar
+                implementation="com.nightlycommit.idea.twigextendedplugin.templating.BlockGotoCompletionRegistrar"/>
+        <GotoCompletionRegistrar
+                implementation="com.nightlycommit.idea.twigextendedplugin.templating.FilterGotoCompletionRegistrar"/>
+        <GotoCompletionRegistrar
+                implementation="com.nightlycommit.idea.twigextendedplugin.templating.TranslationTagGotoCompletionRegistrar"/>
+        <GotoCompletionRegistrar implementation="com.nightlycommit.idea.twigextendedplugin.form.FormGotoCompletionRegistrar"/>
+        <GotoCompletionRegistrar
+                implementation="com.nightlycommit.idea.twigextendedplugin.config.php.PhpEventDispatcherGotoCompletionRegistrar"/>
+        <GotoCompletionRegistrar
+                implementation="com.nightlycommit.idea.twigextendedplugin.completion.command.PhpCommandGotoCompletionRegistrar"/>
+        <GotoCompletionRegistrar
+                implementation="com.nightlycommit.idea.twigextendedplugin.completion.command.ConsoleHelperGotoCompletionRegistrar"/>
+        <GotoCompletionRegistrar
+                implementation="com.nightlycommit.idea.twigextendedplugin.doctrine.metadata.DoctrineXmlGotoCompletionRegistrar"/>
+        <GotoCompletionRegistrar
+                implementation="com.nightlycommit.idea.twigextendedplugin.doctrine.querybuilder.dbal.DoctrineDbalQbGotoCompletionRegistrar"/>
+        <GotoCompletionRegistrar
+                implementation="com.nightlycommit.idea.twigextendedplugin.doctrine.metadata.type.DoctrineTypeGotoCompletionRegistrar"/>
+        <GotoCompletionRegistrar
+                implementation="com.nightlycommit.idea.twigextendedplugin.doctrine.metadata.DoctrineYamlGotoCompletionRegistrar"/>
+        <GotoCompletionRegistrar
+                implementation="com.nightlycommit.idea.twigextendedplugin.doctrine.metadata.ObjectRepositoryFindGotoCompletionRegistrar"/>
+        <GotoCompletionRegistrar
+                implementation="com.nightlycommit.idea.twigextendedplugin.completion.xml.XmlGotoCompletionRegistrar"/>
+        <GotoCompletionRegistrar
+                implementation="com.nightlycommit.idea.twigextendedplugin.dic.registrar.DicGotoCompletionRegistrar"/>
+        <GotoCompletionRegistrar
+                implementation="com.nightlycommit.idea.twigextendedplugin.completion.yaml.YamlGotoCompletionRegistrar"/>
+        <GotoCompletionRegistrar
+                implementation="com.nightlycommit.idea.twigextendedplugin.translation.ValidatorTranslationGotoCompletionRegistrar"/>
+        <GotoCompletionRegistrar
+                implementation="com.nightlycommit.idea.twigextendedplugin.security.VoterGotoCompletionRegistrar"/>
+        <GotoCompletionRegistrar
+                implementation="com.nightlycommit.idea.twigextendedplugin.translation.TranslationPlaceholderGotoCompletionRegistrar"/>
+        <GotoCompletionRegistrar
+                implementation="com.nightlycommit.idea.twigextendedplugin.dic.TaggedParameterGotoCompletionRegistrar"/>
+        <GotoCompletionRegistrar
+                implementation="com.nightlycommit.idea.twigextendedplugin.templating.RenderParameterGotoCompletionRegistrar"/>
+        <GotoCompletionRegistrar
+                implementation="com.nightlycommit.idea.twigextendedplugin.security.AnnotationExpressionGotoCompletionRegistrar"/>
+
+        <TwigNamespaceExtension
+                implementation="com.nightlycommit.idea.twigextendedplugin.templating.path.JsonFileIndexTwigNamespaces"/>
+        <TwigNamespaceExtension
+                implementation="com.nightlycommit.idea.twigextendedplugin.templating.path.ConfigAddPathTwigNamespaces"/>
+        <TwigNamespaceExtension
+                implementation="com.nightlycommit.idea.twigextendedplugin.templating.path.ContainerTwigNamespaceExtension"/>
+        <TwigNamespaceExtension
+                implementation="com.nightlycommit.idea.twigextendedplugin.templating.path.GlobalAppTwigNamespaceExtension"/>
+
+        <ServiceCollector implementation="com.nightlycommit.idea.twigextendedplugin.dic.DefaultServiceCollector"/>
+
+        <TwigVariableCollector
+                implementation="com.nightlycommit.idea.twigextendedplugin.templating.variable.collector.StaticVariableCollector"/>
+        <TwigVariableCollector
+                implementation="com.nightlycommit.idea.twigextendedplugin.templating.variable.collector.GlobalExtensionVariableCollector"/>
+        <TwigVariableCollector
+                implementation="com.nightlycommit.idea.twigextendedplugin.twig.variable.collector.ControllerDocVariableCollector"/>
+        <TwigVariableCollector
+                implementation="com.nightlycommit.idea.twigextendedplugin.twig.variable.collector.ServiceContainerGlobalVariableCollector"/>
+        <TwigVariableCollector
+                implementation="com.nightlycommit.idea.twigextendedplugin.templating.variable.collector.FileDocVariableCollector"/>
+        <TwigVariableCollector
+                implementation="com.nightlycommit.idea.twigextendedplugin.twig.variable.collector.ControllerVariableCollector"/>
+        <TwigVariableCollector
+                implementation="com.nightlycommit.idea.twigextendedplugin.templating.variable.collector.IncludeVariableCollector"/>
+        <TwigVariableCollector
+                implementation="com.nightlycommit.idea.twigextendedplugin.templating.variable.collector.MarcoScopeVariableCollector"/>
+        <TwigVariableCollector
+                implementation="com.nightlycommit.idea.twigextendedplugin.twig.variable.collector.GlobalTwigConfigVariableCollector"/>
+    </extensions>
+
+    <depends>com.jetbrains.twig</depends>
+    <depends>com.intellij.modules.platform</depends>
+    <depends>org.jetbrains.plugins.yaml</depends>
+
+    <project-components>
+        <component>
+            <implementation-class>com.nightlycommit.idea.twigextendedplugin.Symfony2ProjectComponent</implementation-class>
+        </component>
+    </project-components>
+</idea-plugin>

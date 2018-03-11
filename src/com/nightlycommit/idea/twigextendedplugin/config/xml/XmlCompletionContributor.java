@@ -1,0 +1,123 @@
+package com.nightlycommit.idea.twigextendedplugin.config.xml;
+
+import com.intellij.codeInsight.completion.*;
+import com.intellij.openapi.project.Project;
+import com.intellij.patterns.PlatformPatterns;
+import com.intellij.patterns.XmlPatterns;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.psi.xml.XmlAttribute;
+import com.intellij.psi.xml.XmlTag;
+import com.intellij.util.ProcessingContext;
+import com.jetbrains.php.lang.psi.elements.PhpClass;
+import com.nightlycommit.idea.twigextendedplugin.Symfony2ProjectComponent;
+import com.nightlycommit.idea.twigextendedplugin.config.component.parser.ParameterLookupPercentElement;
+import com.nightlycommit.idea.twigextendedplugin.config.yaml.YamlCompletionContributor;
+import com.nightlycommit.idea.twigextendedplugin.dic.ContainerParameter;
+import com.nightlycommit.idea.twigextendedplugin.dic.ServiceCompletionProvider;
+import com.nightlycommit.idea.twigextendedplugin.dic.container.util.DotEnvUtil;
+import com.nightlycommit.idea.twigextendedplugin.form.util.FormUtil;
+import com.nightlycommit.idea.twigextendedplugin.stubs.ContainerCollectionResolver;
+import com.nightlycommit.idea.twigextendedplugin.util.SymfonyBundleFileCompletionProvider;
+import com.nightlycommit.idea.twigextendedplugin.util.completion.PhpClassAndParameterCompletionProvider;
+import com.nightlycommit.idea.twigextendedplugin.util.dict.ServiceUtil;
+import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Map;
+
+/**
+ * @author Daniel Espendiller <daniel@espendiller.net>
+ */
+public class XmlCompletionContributor extends CompletionContributor {
+
+    public XmlCompletionContributor() {
+        extend(CompletionType.BASIC, XmlHelper.getTagPattern("class").inside(XmlHelper.getInsideTagPattern("services")), new PhpClassAndParameterCompletionProvider());
+        extend(CompletionType.BASIC, XmlHelper.getTagPattern("factory-service").inside(XmlHelper.getInsideTagPattern("services")), new ServiceCompletionProvider());
+        extend(CompletionType.BASIC, XmlHelper.getTagPattern("factory-class").inside(XmlHelper.getInsideTagPattern("services")), new PhpClassAndParameterCompletionProvider());
+        extend(CompletionType.BASIC, XmlHelper.getAutowiringTypePattern(), new PhpClassAndParameterCompletionProvider());
+        extend(CompletionType.BASIC, XmlHelper.getTagPattern("parent").inside(XmlHelper.getInsideTagPattern("services")), new ServiceCompletionProvider());
+
+        // <argument type="service" id="<caret>" />
+        // <factory service="<caret>" />
+        extend(CompletionType.BASIC, PlatformPatterns.psiElement().withParent(PlatformPatterns.or(
+            XmlHelper.getArgumentServiceIdPattern(),
+            XmlHelper.getFactoryServiceCompletionPattern(),
+            XmlHelper.getArgumentServiceIdForArgumentPattern()
+        )), new ServiceCompletionProvider());
+
+        extend(CompletionType.BASIC, XmlHelper.getTagAttributePattern("tag", "alias").inside(XmlHelper.getInsideTagPattern("services")), new FormAliasParametersCompletionProvider());
+        extend(CompletionType.BASIC, XmlHelper.getArgumentValuePattern(), new ArgumentParameterCompletionProvider());
+
+        extend(
+            CompletionType.BASIC,
+            XmlPatterns.psiElement().withParent(XmlHelper.getImportResourcePattern()),
+            new SymfonyBundleFileCompletionProvider("Resources/config", "Controller")
+        );
+
+        extend(
+            CompletionType.BASIC,
+            XmlPatterns.psiElement().withParent(XmlHelper.getImportResourcePattern()),
+            new YamlCompletionContributor.DirectoryScopeCompletionProvider()
+        );
+    }
+
+    private static class FormAliasParametersCompletionProvider extends CompletionProvider<CompletionParameters> {
+        @Override
+        protected void addCompletions(@NotNull CompletionParameters completionParameters, ProcessingContext processingContext, final @NotNull CompletionResultSet completionResultSet) {
+            PsiElement psiElement = completionParameters.getOriginalPosition();
+            if(psiElement == null || !Symfony2ProjectComponent.isEnabled(psiElement)) {
+                return;
+            }
+
+            XmlTag xmlTag = PsiTreeUtil.getParentOfType(psiElement, XmlTag.class);
+            if(xmlTag == null) {
+                return;
+            }
+
+            XmlTag xmlTagService = PsiTreeUtil.getParentOfType(xmlTag, XmlTag.class);
+            if(xmlTagService != null) {
+                XmlAttribute xmlAttribute = xmlTagService.getAttribute("class");
+                if(xmlAttribute != null) {
+                    String value = xmlAttribute.getValue();
+                    if(value != null && StringUtils.isNotBlank(value)) {
+                        PhpClass phpClass = ServiceUtil.getResolvedClassDefinition(psiElement.getProject(), value);
+                        if(phpClass != null) {
+                            FormUtil.attachFormAliasesCompletions(phpClass, completionResultSet);
+                        }
+                    }
+                }
+            }
+
+        }
+    }
+
+    /**
+     * <argument>%</argument>
+     * <argument></argument>
+     */
+    private static class ArgumentParameterCompletionProvider extends CompletionProvider<CompletionParameters> {
+
+        @Override
+        protected void addCompletions(@NotNull CompletionParameters completionParameters, ProcessingContext processingContext, @NotNull CompletionResultSet completionResultSet) {
+
+            PsiElement psiElement = completionParameters.getOriginalPosition();
+            if(psiElement == null || !Symfony2ProjectComponent.isEnabled(psiElement)) {
+                return;
+            }
+
+            Project project = psiElement.getProject();
+            for( Map.Entry<String, ContainerParameter> entry: ContainerCollectionResolver.getParameters(project).entrySet()) {
+                completionResultSet.addElement(
+                    new ParameterLookupPercentElement(entry.getValue())
+                );
+            }
+
+            // %env('foobar')%
+            for (String s : DotEnvUtil.getEnvironmentVariables(project)) {
+                completionResultSet.addElement(new ParameterLookupPercentElement(new ContainerParameter("env(" + s +")", false)));
+            }
+        }
+    }
+}
+

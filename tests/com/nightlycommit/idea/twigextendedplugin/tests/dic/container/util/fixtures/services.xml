@@ -1,0 +1,24 @@
+<container>
+    <services>
+        <service id="bar" class="stdClass" decorates="foo" decoration-inner-name="bar.wooz" public="false"/>
+        <service id="defaults" class="DateTime"/>
+        <service id="non.defaults"
+                 class="DateTime"
+                 decorates="foo"
+                 decoration-inner-name="foo"
+                 abstract="true"
+                 autowire="true"
+                 deprecated="true"
+                 lazy="true"
+                 public="false"
+                 alias="foo"
+                 parent="foo"/>
+
+        <service id="bar.UPPER" class="stdClass"/>
+
+        <service id="My\Class\Id\First"/>
+        <service id="My\Class\Id\Second"/>
+        <service id="my_abstract_without_class" abstract="true"/>
+        <service id="my_alias_without_class" alias="foobar"/>
+    </services>
+</container>

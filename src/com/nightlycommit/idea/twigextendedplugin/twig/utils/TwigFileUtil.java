@@ -1,0 +1,81 @@
+package com.nightlycommit.idea.twigextendedplugin.twig.utils;
+
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiManager;
+import com.intellij.psi.search.GlobalSearchScope;
+import com.intellij.util.indexing.FileBasedIndex;
+import com.jetbrains.twig.TwigFile;
+import com.nightlycommit.idea.twigextendedplugin.stubs.indexes.TwigBlockIndexExtension;
+import com.nightlycommit.idea.twigextendedplugin.templating.util.TwigUtil;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+
+/**
+ * @author Daniel Espendiller <daniel@espendiller.net>
+ */
+public class TwigFileUtil {
+    /**
+     * Visit parent Twig files eg on "embed" tag and provide all files in this path until root file
+     */
+    @NotNull
+    public static Collection<VirtualFile> collectParentFiles(boolean includeSelf, @NotNull Collection<PsiFile> psiFiles) {
+        return collectParentFiles(includeSelf, psiFiles.toArray(new PsiFile[psiFiles.size()]));
+    }
+
+    /**
+     * Visit parent Twig files eg on "embed" tag and provide all files in this path until root file
+     */
+    @NotNull
+    public static Collection<VirtualFile> collectParentFiles(boolean includeSelf, @NotNull PsiFile... psiFiles) {
+        Set<VirtualFile> virtualFiles = new HashSet<>();
+
+        for (PsiFile psiFile : psiFiles) {
+            VirtualFile sourceFile = psiFile.getVirtualFile();
+            if(includeSelf) {
+                virtualFiles.add(sourceFile);
+            }
+
+            visitParentFiles(psiFile, 0, virtualFiles);
+        }
+
+        return virtualFiles;
+    }
+
+    private static void visitParentFiles(@NotNull PsiFile file, int depth, Collection<VirtualFile> virtualFiles) {
+        // limit recursive calls
+        if(depth++ > 20) {
+            return;
+        }
+
+        Set<VirtualFile> myVirtualFiles = new HashSet<>();
+
+        for (String s : new String[]{"extends", "use"}) {
+            Set<String> templates = new HashSet<>();
+
+            FileBasedIndex.getInstance()
+                .getValues(TwigBlockIndexExtension.KEY, s, GlobalSearchScope.fileScope(file))
+                .forEach(templates::addAll);
+
+            for (String template : templates) {
+                for (VirtualFile virtualFile : TwigUtil.getTemplateFiles(file.getProject(), template)) {
+                    if (!virtualFiles.contains(virtualFile)) {
+                        myVirtualFiles.add(virtualFile);
+                        virtualFiles.add(virtualFile);
+                    }
+                }
+            }
+        }
+
+        // visit files in this scope
+        for(VirtualFile virtualFile : myVirtualFiles) {
+            PsiFile psiFile = PsiManager.getInstance(file.getProject()).findFile(virtualFile);
+            if(psiFile instanceof TwigFile) {
+                visitParentFiles(psiFile, depth, virtualFiles);
+            }
+        }
+    }
+}

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<container>
+  <services>
+      <service id="foo" class="MyDateTime"/>
+      <service id="foo.bar" class="MyDateTime"/>
+      <service id="MyDateTime"/>
+  </services>
+</container>

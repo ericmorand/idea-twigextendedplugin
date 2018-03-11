@@ -1,0 +1,84 @@
+package com.nightlycommit.idea.twigextendedplugin.util.completion;
+
+import com.intellij.codeInsight.completion.CompletionParameters;
+import com.intellij.codeInsight.completion.CompletionProvider;
+import com.intellij.codeInsight.completion.CompletionResultSet;
+import com.intellij.codeInsight.lookup.LookupElement;
+import com.intellij.ide.highlighter.XmlFileType;
+import com.intellij.openapi.project.Project;
+import com.intellij.psi.search.GlobalSearchScope;
+import com.intellij.util.ProcessingContext;
+import com.intellij.util.indexing.FileBasedIndex;
+import com.nightlycommit.idea.twigextendedplugin.Symfony2ProjectComponent;
+import com.nightlycommit.idea.twigextendedplugin.util.service.ServiceXmlParserFactory;
+import com.nightlycommit.idea.twigextendedplugin.Symfony2ProjectComponent;
+import com.nightlycommit.idea.twigextendedplugin.completion.lookup.ContainerTagLookupElement;
+import com.nightlycommit.idea.twigextendedplugin.dic.XmlTagParser;
+import com.nightlycommit.idea.twigextendedplugin.dic.container.dict.ContainerBuilderCall;
+import com.nightlycommit.idea.twigextendedplugin.stubs.SymfonyProcessors;
+import com.nightlycommit.idea.twigextendedplugin.stubs.indexes.ContainerBuilderStubIndex;
+import com.nightlycommit.idea.twigextendedplugin.stubs.indexes.ServicesTagStubIndex;
+import com.nightlycommit.idea.twigextendedplugin.util.service.ServiceXmlParserFactory;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.yaml.YAMLFileType;
+
+import java.util.*;
+
+/**
+ * @author Daniel Espendiller <daniel@espendiller.net>
+ */
+public class TagNameCompletionProvider extends CompletionProvider<CompletionParameters> {
+    @Override
+    protected void addCompletions(@NotNull CompletionParameters completionParameters, ProcessingContext processingContext, @NotNull CompletionResultSet completionResultSet) {
+
+        if(!Symfony2ProjectComponent.isEnabled(completionParameters.getPosition())) {
+            return;
+        }
+
+        completionResultSet.addAllElements(getTagLookupElements(completionParameters.getPosition().getProject()));
+    }
+
+    @NotNull
+    public static Collection<LookupElement> getTagLookupElements(@NotNull Project project) {
+
+        Collection<LookupElement> lookupElements = new ArrayList<>();
+
+        Set<String> uniqueTags = new HashSet<>();
+
+        XmlTagParser xmlEventParser = ServiceXmlParserFactory.getInstance(project, XmlTagParser.class);
+        for(String tag: xmlEventParser.get()) {
+            uniqueTags.add(tag);
+            lookupElements.add(new ContainerTagLookupElement(tag));
+        }
+
+        for(String serviceName: SymfonyProcessors.createResult(project, ServicesTagStubIndex.KEY)) {
+            List<Set<String>> tags = FileBasedIndex.getInstance().getValues(ServicesTagStubIndex.KEY, serviceName, GlobalSearchScope.getScopeRestrictedByFileTypes(GlobalSearchScope.allScope(project), XmlFileType.INSTANCE, YAMLFileType.YML));
+            for(Set<String> tagDef: tags) {
+                for(String tag: tagDef) {
+                    if(!uniqueTags.contains(tag)) {
+                        uniqueTags.add(tag);
+                        lookupElements.add(new ContainerTagLookupElement(tag, true));
+                    }
+                }
+            }
+        }
+
+        // findTaggedServiceIds("foo") for ContainerBuilder
+        for (ContainerBuilderCall call : FileBasedIndex.getInstance().getValues(ContainerBuilderStubIndex.KEY, "findTaggedServiceIds", GlobalSearchScope.allScope(project))) {
+            Collection<String> parameter = call.getParameter();
+            if(parameter == null || parameter.size() == 0) {
+                continue;
+            }
+
+            for (String s : parameter) {
+                if(uniqueTags.contains(s)) {
+                    continue;
+                }
+
+                lookupElements.add(new ContainerTagLookupElement(s, true));
+            }
+        }
+
+        return lookupElements;
+    }
+}

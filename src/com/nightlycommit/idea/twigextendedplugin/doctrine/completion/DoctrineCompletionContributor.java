@@ -1,0 +1,83 @@
+package com.nightlycommit.idea.twigextendedplugin.doctrine.completion;
+
+import com.intellij.codeInsight.completion.*;
+import com.intellij.codeInsight.lookup.LookupElement;
+import com.intellij.codeInsight.lookup.LookupElementPresentation;
+import com.intellij.patterns.PlatformPatterns;
+import com.intellij.psi.PsiElement;
+import com.intellij.util.ProcessingContext;
+import com.jetbrains.php.lang.psi.elements.ConstantReference;
+import com.jetbrains.php.lang.psi.elements.MethodReference;
+import com.jetbrains.php.lang.psi.elements.PhpClass;
+import com.nightlycommit.idea.twigextendedplugin.Symfony2Icons;
+import com.nightlycommit.idea.twigextendedplugin.Symfony2ProjectComponent;
+import com.nightlycommit.idea.twigextendedplugin.completion.lookup.ClassConstantLookupElementAbstract;
+import com.nightlycommit.idea.twigextendedplugin.doctrine.EntityHelper;
+import com.nightlycommit.idea.twigextendedplugin.util.PhpElementsUtil;
+import com.nightlycommit.idea.twigextendedplugin.util.dict.DoctrineModel;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Collection;
+
+/**
+ * @author Daniel Espendiller <daniel@espendiller.net>
+ */
+public class DoctrineCompletionContributor extends CompletionContributor {
+
+    public DoctrineCompletionContributor() {
+
+        // getRepository(FOO) -> getRepository(FOO::class)
+        extend(CompletionType.BASIC, PlatformPatterns.psiElement().withParent(ConstantReference.class), new CompletionProvider<CompletionParameters>() {
+            @Override
+            protected void addCompletions(@NotNull CompletionParameters completionParameters, ProcessingContext processingContext, @NotNull CompletionResultSet completionResultSet) {
+                PsiElement psiElement = completionParameters.getOriginalPosition();
+                if (!Symfony2ProjectComponent.isEnabled(psiElement)) {
+                    return;
+                }
+
+                MethodReference methodReference = PhpElementsUtil.findMethodReferenceOnClassConstant(psiElement);
+                if (methodReference == null) {
+                    return;
+                }
+
+                if(!(
+                    PhpElementsUtil.isMethodReferenceInstanceOf(methodReference, "Doctrine\\Common\\Persistence\\ObjectManager", "getRepository") ||
+                    PhpElementsUtil.isMethodReferenceInstanceOf(methodReference, "Doctrine\\Common\\Persistence\\ManagerRegistry", "getRepository")
+                )) {
+                    return;
+                }
+
+                Collection<DoctrineModel> modelClasses = EntityHelper.getModelClasses(psiElement.getProject());
+
+                for (DoctrineModel doctrineModel : modelClasses) {
+                    PhpClass phpClass = doctrineModel.getPhpClass();
+                    if(phpClass.isAbstract() || phpClass.isInterface()) {
+                        continue;
+                    }
+
+                    LookupElement elementBuilder = new Foo(phpClass);
+
+                    // does this have an effect really?
+                    completionResultSet.addElement(
+                        PrioritizedLookupElement.withExplicitProximity(PrioritizedLookupElement.withPriority(elementBuilder, 1000), 1000)
+                    );
+                }
+
+            }
+
+        });
+    }
+
+    private static class Foo extends ClassConstantLookupElementAbstract {
+
+        public Foo(@NotNull PhpClass phpClass) {
+            super(phpClass);
+        }
+
+        @Override
+        public void renderElement(LookupElementPresentation presentation) {
+            super.renderElement(presentation);
+            presentation.setIcon(Symfony2Icons.DOCTRINE);
+        }
+    }
+}

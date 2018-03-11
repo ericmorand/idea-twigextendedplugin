@@ -1,0 +1,100 @@
+package com.nightlycommit.idea.twigextendedplugin.navigation.controller;
+
+import com.intellij.openapi.util.Pair;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiFile;
+import com.intellij.psi.util.PsiTreeUtil;
+import com.jetbrains.php.lang.documentation.phpdoc.psi.PhpDocComment;
+import com.jetbrains.php.lang.documentation.phpdoc.psi.tags.PhpDocTag;
+import com.jetbrains.php.lang.psi.elements.Method;
+import com.jetbrains.php.lang.psi.elements.PhpClass;
+import com.nightlycommit.idea.twigextendedplugin.Symfony2Icons;
+import com.nightlycommit.idea.twigextendedplugin.config.SymfonyPhpReferenceContributor;
+import com.nightlycommit.idea.twigextendedplugin.dic.RelatedPopupGotoLineMarker;
+import com.nightlycommit.idea.twigextendedplugin.extension.ControllerActionGotoRelatedCollector;
+import com.nightlycommit.idea.twigextendedplugin.extension.ControllerActionGotoRelatedCollectorParameter;
+import com.nightlycommit.idea.twigextendedplugin.templating.util.TwigUtil;
+import com.nightlycommit.idea.twigextendedplugin.util.AnnotationBackportUtil;
+import com.nightlycommit.idea.twigextendedplugin.util.MethodMatcher;
+import com.nightlycommit.idea.twigextendedplugin.util.PhpElementsUtil;
+import icons.TwigIcons;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.*;
+import java.util.function.Consumer;
+
+/**
+ * @author Daniel Espendiller <daniel@espendiller.net>
+ */
+public class TemplatesControllerRelatedGotoCollector implements ControllerActionGotoRelatedCollector {
+
+    @Override
+    public void collectGotoRelatedItems(ControllerActionGotoRelatedCollectorParameter parameter) {
+        Set<String> uniqueTemplates = new HashSet<>();
+
+        Method method = parameter.getMethod();
+
+        visitMethodTemplateNames(method, pair -> {
+            String templateName = pair.getFirst();
+
+            if(!uniqueTemplates.contains(templateName)) {
+                uniqueTemplates.add(templateName);
+
+                for (PsiElement psiElement : pair.getSecond()) {
+                    parameter.add(new RelatedPopupGotoLineMarker.PopupGotoRelatedItem(
+                        psiElement,
+                        TwigUtil.getFoldingTemplateNameOrCurrent(templateName)).withIcon(TwigIcons.TwigFileIcon, Symfony2Icons.TWIG_LINE_MARKER)
+                    );
+                }
+            }
+        });
+
+        for(PsiElement psiElement: parameter.getParameterLists()) {
+            MethodMatcher.MethodMatchParameter matchedSignature = MethodMatcher.getMatchedSignatureWithDepth(psiElement, SymfonyPhpReferenceContributor.TEMPLATE_SIGNATURES);
+            if (matchedSignature != null) {
+                String resolveString = PhpElementsUtil.getStringValue(psiElement);
+                if(resolveString != null && !uniqueTemplates.contains(resolveString)) {
+                    uniqueTemplates.add(resolveString);
+                    for(PsiFile templateTarget: TwigUtil.getTemplatePsiElements(parameter.getProject(), resolveString)) {
+                        parameter.add(new RelatedPopupGotoLineMarker.PopupGotoRelatedItem(templateTarget, resolveString).withIcon(TwigIcons.TwigFileIcon, Symfony2Icons.TWIG_LINE_MARKER));
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     *  Visit every possible template on given method: eg Annotations @Template()
+     */
+    public static void visitMethodTemplateNames(@NotNull Method method, @NotNull Consumer<Pair<String, Collection<PsiElement>>> consumer) {
+        // on @Template annotation
+        PhpDocComment phpDocComment = method.getDocComment();
+        if(phpDocComment != null) {
+            Collection<PhpDocTag> phpDocTags = AnnotationBackportUtil.filterValidDocTags(PsiTreeUtil.findChildrenOfType(phpDocComment, PhpDocTag.class));
+            if(phpDocTags.size() > 0) {
+                // cache use map for this phpDocComment
+                Map<String, String> importMap = AnnotationBackportUtil.getUseImportMap(phpDocComment);
+                if(importMap.size() > 0) {
+                    for(PhpDocTag phpDocTag: phpDocTags) {
+                        // resolve annotation and check for template
+                        PhpClass phpClass = AnnotationBackportUtil.getAnnotationReference(phpDocTag, importMap);
+                        if(phpClass != null && PhpElementsUtil.isEqualClassName(phpClass, TwigUtil.TEMPLATE_ANNOTATION_CLASS)) {
+                            Pair<String, Collection<PsiElement>> templateAnnotationFiles = TwigUtil.getTemplateAnnotationFiles(phpDocTag);
+                            if(templateAnnotationFiles != null) {
+                                consumer.accept(Pair.create(templateAnnotationFiles.getFirst(), templateAnnotationFiles.getSecond()));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // on method name
+        for (String templateName : TwigUtil.getControllerMethodShortcut(method)) {
+            consumer.accept(Pair.create(
+                templateName,
+                new HashSet<>(TwigUtil.getTemplatePsiElements(method.getProject(), templateName))
+            ));
+        }
+    }
+}

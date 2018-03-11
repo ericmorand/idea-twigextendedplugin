@@ -1,0 +1,33 @@
+package com.nightlycommit.idea.twigextendedplugin.extension;
+
+import com.intellij.openapi.project.Project;
+import com.nightlycommit.idea.twigextendedplugin.dic.ContainerFile;
+
+import java.util.Collection;
+
+/**
+ * @author Daniel Espendiller <daniel@espendiller.net>
+ */
+public class ServiceContainerLoaderParameter {
+
+    private Collection<ContainerFile> containerFiles;
+    private Project project;
+
+    public ServiceContainerLoaderParameter(Project project, Collection<ContainerFile> containerFiles) {
+        this.containerFiles = containerFiles;
+        this.project = project;
+    }
+
+    public void addContainerFile(ContainerFile containerFile) {
+        this.containerFiles.add(containerFile);
+    }
+
+    public void addContainerFiles(Collection<ContainerFile> containerFiles) {
+        this.containerFiles.addAll(containerFiles);
+    }
+
+    public Project getProject() {
+        return project;
+    }
+
+}

@@ -1,0 +1,71 @@
+package com.nightlycommit.idea.twigextendedplugin.asset;
+
+import com.intellij.codeInsight.completion.InsertHandler;
+import com.intellij.codeInsight.completion.InsertionContext;
+import com.intellij.codeInsight.lookup.LookupElement;
+import com.intellij.codeInsight.lookup.LookupElementPresentation;
+import com.intellij.openapi.project.Project;
+import com.intellij.util.IconUtil;
+import com.nightlycommit.idea.twigextendedplugin.util.dict.ResourceFileInsertHandler;
+import org.jetbrains.annotations.NotNull;
+
+/**
+ * @author Adrien Brault <adrien.brault@gmail.com>
+ */
+public class AssetLookupElement extends LookupElement {
+    protected AssetFile assetFile;
+    protected Project project;
+    protected InsertHandler<AssetLookupElement> insertHandler;
+
+    public AssetLookupElement(AssetFile assetfile, Project project) {
+        this.assetFile = assetfile;
+        this.project = project;
+    }
+
+    @NotNull
+    @Override
+    public String getLookupString() {
+
+        if(assetFile.getAssetPosition().equals(AssetEnum.Position.Bundle)) {
+            return assetFile.toString().substring(1);
+        }
+
+        return assetFile.toString();
+    }
+
+    @Override
+    public void handleInsert(InsertionContext context) {
+
+        if(insertHandler != null) {
+            insertHandler.handleInsert(context, this);
+            super.handleInsert(context);
+            return;
+        }
+
+        if(assetFile.getAssetPosition().equals(AssetEnum.Position.Bundle)) {
+            ResourceFileInsertHandler.getInstance().handleInsert(context, this);
+        }
+
+        super.handleInsert(context);
+    }
+
+    @Override
+    public void renderElement(LookupElementPresentation presentation) {
+
+        String typeText = "Web";
+        if(assetFile.getAssetPosition().equals(AssetEnum.Position.Bundle)) {
+            typeText = "Bundle";
+        }
+
+        presentation.setItemText(assetFile.toString());
+        presentation.setTypeText(typeText);
+        presentation.setIcon(IconUtil.getIcon(assetFile.getFile(), 0, project));
+
+    }
+
+    public AssetLookupElement withInsertHandler(InsertHandler<AssetLookupElement> insertHandler) {
+        this.insertHandler = insertHandler;
+        return this;
+    }
+
+}

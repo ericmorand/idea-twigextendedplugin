@@ -1,0 +1,172 @@
+package com.nightlycommit.idea.twigextendedplugin.ui;
+
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.fileTypes.StdFileTypes;
+import com.intellij.openapi.options.Configurable;
+import com.intellij.openapi.options.ConfigurationException;
+import com.intellij.openapi.project.Project;
+import com.intellij.ui.AnActionButton;
+import com.intellij.ui.ToolbarDecorator;
+import com.intellij.ui.table.TableView;
+import com.intellij.util.ui.ElementProducer;
+import com.intellij.util.ui.ListTableModel;
+import com.nightlycommit.idea.twigextendedplugin.Settings;
+import com.nightlycommit.idea.twigextendedplugin.Settings;
+import com.nightlycommit.idea.twigextendedplugin.dic.ContainerFile;
+import com.nightlycommit.idea.twigextendedplugin.ui.utils.UiSettingsUtil;
+import com.nightlycommit.idea.twigextendedplugin.ui.utils.dict.UiPathColumnInfo;
+import org.jetbrains.annotations.Nls;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import javax.swing.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * @author Daniel Espendiller <daniel@espendiller.net>
+ */
+public class ContainerSettingsForm implements Configurable {
+
+    private JPanel panel1;
+    private JPanel listviewPanel;
+    private JButton buttonReset;
+    private TableView<ContainerFile> tableView;
+    private Project project;
+    private boolean changed = false;
+    private ListTableModel<ContainerFile> modelList;
+
+
+    public ContainerSettingsForm(@NotNull Project project) {
+
+        this.project = project;
+        this.tableView = new TableView<>();
+
+        this.modelList = new ListTableModel<>(
+            new UiPathColumnInfo.PathColumn(),
+            new UiPathColumnInfo.TypeColumn(project)
+        );
+
+        this.fillContainerList();
+
+        this.modelList.addTableModelListener(e ->
+            ContainerSettingsForm.this.changed = true
+        );
+
+        this.tableView.setModelAndUpdateColumns(this.modelList);
+
+        buttonReset.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                super.mouseClicked(e);
+
+                resetContainerList();
+
+                // add default path
+                for (String defaultContainerPath : Settings.DEFAULT_CONTAINER_PATHS) {
+                    ContainerSettingsForm.this.modelList.addRow(new ContainerFile(defaultContainerPath));
+                }
+
+            }
+        });
+    }
+
+    private void fillContainerList() {
+        List<ContainerFile> containerFiles = getSettings().containerFiles;
+        if(containerFiles != null && containerFiles.size() > 0) {
+            this.modelList.addRows(containerFiles);
+        }
+    }
+
+    @Nls
+    @Override
+    public String getDisplayName() {
+        return "Container";
+    }
+
+    @Nullable
+    @Override
+    public String getHelpTopic() {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public JComponent createComponent() {
+        ToolbarDecorator tablePanel = ToolbarDecorator.createDecorator(this.tableView, new ElementProducer<ContainerFile>() {
+            @Override
+            public ContainerFile createElement() {
+                return null;
+            }
+
+            @Override
+            public boolean canCreateElement() {
+                return true;
+            }
+        });
+
+        tablePanel.setEditAction(anActionButton -> {
+            ContainerFile containerFile = ContainerSettingsForm.this.tableView.getSelectedObject();
+            if(containerFile != null) {
+                String uri = UiSettingsUtil.getPathDialog(project, StdFileTypes.XML);
+                if(uri != null) {
+                    containerFile.setPath(uri);
+                    ContainerSettingsForm.this.changed = true;
+                }
+
+            }
+        });
+
+        tablePanel.setAddAction(anActionButton -> {
+            String uri = UiSettingsUtil.getPathDialog(project, StdFileTypes.XML);
+            if(uri != null) {
+                ContainerSettingsForm.this.tableView.getListTableModel().addRow(new ContainerFile(uri));
+                ContainerSettingsForm.this.changed = true;
+            }
+        });
+
+        this.panel1.add(tablePanel.createPanel());
+        return this.panel1;
+    }
+
+    @Override
+    public boolean isModified() {
+        return this.changed;
+    }
+
+    @Override
+    public void apply() throws ConfigurationException {
+        List<ContainerFile> containerFiles = new ArrayList<>();
+
+        for(ContainerFile containerFile :this.tableView.getListTableModel().getItems()) {
+            containerFiles.add(new ContainerFile(containerFile.getPath()));
+        }
+
+        getSettings().containerFiles = containerFiles;
+        this.changed = false;
+    }
+
+    private Settings getSettings() {
+        return Settings.getInstance(this.project);
+    }
+
+    @Override
+    public void reset() {
+        this.resetContainerList();
+        this.fillContainerList();
+        this.changed = false;
+    }
+
+    private void resetContainerList() {
+        // clear list, easier?
+        while(this.modelList.getRowCount() > 0) {
+            this.modelList.removeRow(0);
+        }
+    }
+
+    @Override
+    public void disposeUIResources() {
+    }
+}

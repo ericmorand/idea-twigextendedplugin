@@ -1,0 +1,11 @@
+yaml_weak:
+  symfony:
+    great: 'YAML Symfony2 is great'
+    "greater than": 'YAML Symfony2 is great'
+    'greater than equals': 'YAML Symfony2 is great'
+    more.lines: |
+      Foo bar
+      bar
+    more.lines_2: >
+      Foo bar
+      bar

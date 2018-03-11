@@ -1,0 +1,28 @@
+parameters:
+    foo_yaml_parameter_empty:
+    foo_yaml_parameter: "foo"
+    foo_yaml_parameter_UPPER: "foo"
+    foo_yaml_parameter_collection: ['aaaa']
+    foo_yaml_parameter_collection_sequence:
+      - foo
+      - goo
+
+services:
+    foo.yml_id:
+        class: AppBundle\Controller\DefaultController
+
+    foo.yml_id.private:
+        class: AppBundle\Controller\DefaultController
+        public: false
+
+    foo.yml_id.alias:
+        alias: foo.yml_id
+
+    foo.yml_id.slash:
+        class: \AppBundle\Controller\DefaultController
+
+    foo.yml_id.deprecated_tilde:
+        deprecated: ~
+
+    foo.yml_id.deprecated_bool:
+        deprecated: true

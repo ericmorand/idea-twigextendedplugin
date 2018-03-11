@@ -1,0 +1,23 @@
+sudo: false
+language: java
+jdk:
+  - oraclejdk8
+  
+script: "./travis.sh"
+cache:
+  directories:
+    - .cache
+before_script:
+ - sudo apt-get -qq update
+ - sudo apt-get install ant-optional
+ - chmod +x travis.sh
+
+env:
+  #- PHPSTORM_ENV=2017.2 # unsupported api
+  #- PHPSTORM_ENV=2017.2.4 # unsupported api
+  - PHPSTORM_ENV=2017.3.2
+  #- PHPSTORM_ENV=eap # disabled never used
+
+matrix:
+  allow_failures:
+    - env: PHPSTORM_ENV=eap
