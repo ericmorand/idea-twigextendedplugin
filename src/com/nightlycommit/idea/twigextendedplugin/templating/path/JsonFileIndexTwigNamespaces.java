@@ -58,13 +58,15 @@ public class JsonFileIndexTwigNamespaces implements TwigNamespaceExtension {
         Collection<TwigPath> twigPaths = new ArrayList<>();
         String namespacesManifestPath = Settings.getInstance(parameter.getProject()).namespacesManifestPath;
 
-        VirtualFile virtualFile = LocalFileSystem.getInstance().findFileByPath(namespacesManifestPath);
-        PsiFile psiFile = PsiManager.getInstance(parameter.getProject()).findFile(virtualFile);
+        if (namespacesManifestPath != null) {
+            VirtualFile virtualFile = LocalFileSystem.getInstance().findFileByPath(namespacesManifestPath);
+            PsiFile psiFile = PsiManager.getInstance(parameter.getProject()).findFile(virtualFile);
 
-        if (psiFile != null) {
-            Collection<TwigPath> cachedValue = CachedValuesManager.getCachedValue(psiFile, new MyJsonCachedValueProvider(psiFile));
-            if (cachedValue != null) {
-                twigPaths.addAll(cachedValue);
+            if (psiFile != null) {
+                Collection<TwigPath> cachedValue = CachedValuesManager.getCachedValue(psiFile, new MyJsonCachedValueProvider(psiFile));
+                if (cachedValue != null) {
+                    twigPaths.addAll(cachedValue);
+                }
             }
         }
 
